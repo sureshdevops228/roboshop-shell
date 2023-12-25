@@ -13,6 +13,7 @@ echo "Script execution start at $TIMESTAMP" &>> $LOGFILE
 VALIDATE(){
     if [ $1 -ne 0 ]
         echo -e "$2 ... $R FAILED $N"
+        exit 1
     else
         echo -e "$2 ... $G SUCCESS $N"
     fi
@@ -26,15 +27,24 @@ else
     echo -e "$G You are root user $N"
 fi
 
-cp mongo.repo /etc/yum.repos.d/mongo.repo &>> LOGFILE
+cp mongo.repo /etc/yum.repos.d/mongo.repo &>> $LOGFILE
 
 VALIDATE $? "Copied MongoDB Repo"
 
-dnf install mongodb-org -y  &>> LOGFILE
+dnf install mongodb-org -y  &>> $LOGFILE
 VALIDATE $? "Installing MongoDB :: "
 
-systemctl enable mongod
+systemctl enable mongod &>> $LOGFILE
 VALIDATE $? "Enabling MongoDB :: "
 
-systemctl start mongod
+systemctl start mongod &>> $LOGFILE
 VALIDATE $? "Starting MongoDB :: "
+
+sed -i 's/127.0.0.1/0.0.0.0/g' /etc/mongod.conf &>> $LOGFILE
+
+VALIDATE $? "Remote access to Mongodb:: "
+
+systemctl restart mongod
+
+VALIDATE $? "MongoDB restart :: "
+
